@@ -23,11 +23,12 @@ function handleSubmit(event) {
     const daysAway = getDays(departureDate);
 
     getGeoLocation(geonameUrl, destination, geonamesUsername)
-    .then(function(geoResponse){
+    .then(function(data){
         try{
-            let geoData = geoResponse[0];
-            console.log(geoData);
-            getWeather(weatherUrl, destination, weatherAPI)
+            let geoData = data.postalCodes;
+            
+            // console.log(goeData);
+            getWeather(weatherUrl, destination, weatherAPI, daysAway)
             .then(function(weatherData){
                 console.log('Weather Response for ', destination)
                 console.log("Weather data is" + JSON.stringify(weatherData));
@@ -37,13 +38,13 @@ function handleSubmit(event) {
                     document.getElementById('location').innerHTML = "Destination: "+ destination;
                     document.getElementById('tripLength').innerHTML = "Trip length: " + tripLength + " days";
                     document.getElementById('daysAway').innerHTML = "Your trip is " + daysAway + " days away";
-                    document.getElementById('temp').innerHTML = "Temperature: Max " + weatherData.data[0].high_temp +" Min " + weatherResponse.low; 
+                    document.getElementById('temp').innerHTML = "Temperature: Max temperature = " + weatherData.high + " &  Min temperature = " + weatherData.low; 
 
                     const tripData = {
-                        destination: geoData.placeName,
-                        country: geoData.countryCode,
-                        latitude: geoData.lat,
-                        longitude: geoData.lng,
+                        destination: data.placeName,
+                        country: data.countryCode,
+                        latitude: data.lat,
+                        longitude: data.lng,
                         departure: date
                     };
                     postData('http://localhost:8000/addWeather', tripData)
@@ -54,7 +55,6 @@ function handleSubmit(event) {
             getImage(pixabyUrl, destination, pixabyAPI)
                 .then(function(imageReturned){
                     document.getElementById('image').src = imageReturned["hits"][0].webformatURL;
-                    console.log('hi')
                 });
     } catch(error){
         console.log('Error', error);
@@ -68,6 +68,7 @@ const getGeoLocation = async (geonameUrl, destination, geonamesUsername) => {
     const response = await fetch(`${geonameUrl}placename=${destination}&maxRows=1&username=${geonamesUsername}`) 
     try {
         const data = await response.json;
+        JSON.stringify(data);
         return data;
     } catch(error) {
         console.log("Error", error);
@@ -75,15 +76,15 @@ const getGeoLocation = async (geonameUrl, destination, geonamesUsername) => {
 }
 
 //Function to get weather data from Weatherbit API
-const getWeather = async (weatherUrl, destination, weatherAPI) => {
+const getWeather = async (weatherUrl, destination, weatherAPI, days) => {
     const response = await fetch(`${weatherUrl}&city=${destination}&key=${weatherAPI}`) 
     try {
         const weatherData = await response.json;
-        // const weatherPrediction = {};
-        // weatherPrediction["high"] = weatherData['data'][0].high_temp;
-        // weatherPrediction["low"] = weatherData['data'][0].low_temp;
-        // return weatherPrediction;
-        return weatherData;
+        const weatherPrediction = {};
+        weatherPrediction["high"] = weatherData['data'][0].high_temp;
+        weatherPrediction["low"] = weatherData['data'][0].low_temp;
+        return weatherPrediction;
+        // return weatherData;
     } catch(error) {
         console.log("Error", error);
     }
